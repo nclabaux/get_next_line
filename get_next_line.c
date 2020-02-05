@@ -1,41 +1,56 @@
-
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nclabaux <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2020/01/23 13:25:17 by nclabaux          #+#    #+#             */
+/*   Updated: 2020/02/05 01:56:27 by nclabaux         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "get_next_line.h"
 
-int 	get_next_line(int fd, char **line)
+int		get_next_line(int fd, char **line)
 {
 	static char	buffer[BUFFER_SIZE];
-	int			status;
-	int			check;
-	int			i;
+	long		check;
 	int			index;
+	int			end_of_file;
 
-	if (BUFFER_SIZE < 1)
-		return (-1);
-	i = 1;
+	if (!(*line))
+		if (!(ft_init(line)))
+			return (-1);
+	end_of_file = 0;
 	index = 0;
-	while (i)
+	while (!end_of_file)
 	{
-		status = ft_buffer_rd(buffer, line, &index);
-		if (status)
+		check = ft_buffer_rd(buffer, line, &index);
+		if (check == -1)
+			return (-1);
+		if (check)
 			return (1);
 		check = read(fd, buffer, BUFFER_SIZE);
 		if (check == 0 || check == -1)
 			return (check);
+		if (check < BUFFER_SIZE && buffer[0] == 0)
+			end_of_file = 1;
 	}
-	return (-1);
+	ft_buffer_rd(buffer, line, &index);
+	return (0);
 }
 
-int		ft_buffer_rd(char buffer[BUFFER_SIZE], char **line, int *index)
+int		ft_buffer_rd(char *buffer, char **line, int *index)
 {
 	while (buffer[0])
 	{
+		if (*index >= LINE_SIZE)
+			return (-1);
 		if (buffer[0] == '\n')
 		{
 			*((*line) + (*index)) = '\0';
 			ft_buffer_cut(buffer);
-			if (*index == BUFFER_SIZE - 1)
-				return (0);
 			return (*index + 1);
 		}
 		else
@@ -48,9 +63,9 @@ int		ft_buffer_rd(char buffer[BUFFER_SIZE], char **line, int *index)
 	return (0);
 }
 
-void	ft_buffer_cut(char buffer[BUFFER_SIZE])
+void	ft_buffer_cut(char *buffer)
 {
-	int i;
+	long	i;
 
 	if (BUFFER_SIZE == 1)
 		buffer[0] = 0;
@@ -62,11 +77,20 @@ void	ft_buffer_cut(char buffer[BUFFER_SIZE])
 	else
 	{
 		i = 0;
-		while (i < BUFFER_SIZE - 1)
+		while (i < BUFFER_SIZE - 1 && buffer[i])
 		{
 			buffer[i] = buffer[i + 1];
 			i++;
 		}
-		buffer[BUFFER_SIZE - 1] = 0;
+		buffer[i] = 0;
 	}
+}
+
+int		ft_init(char **line)
+{
+	if (BUFFER_SIZE < 1)
+		return (0);
+	if (!(*line = malloc(sizeof(char) * LINE_SIZE)))
+		return (0);
+	return (1);
 }
